@@ -29,7 +29,7 @@ func form() {
 	form = tview.NewForm().
 		AddInputField("Diretório de Entrada", "C:\\Users\\leand\\Music", tamanhoCampos, nil, nil).
 		AddInputField("Diretório de Saida", "C:\\Users\\leand\\Music", tamanhoCampos, nil, nil).
-		AddInputField("Qualidade do áudio", "10", 20, nil, nil).
+		AddInputField("Qualidade do áudio", "10", 10, nil, nil).
 		AddCheckbox("Renomear Por Numero", false, func(checked bool) {
 			RenomearPorNumero = checked // Atualiza a variável global com o estado da checkbox
 		}).
@@ -44,7 +44,7 @@ func form() {
 			app.Stop()
 		})
 
-	form.SetBorder(true).SetTitle(" Entre com as informações ").SetTitleAlign(tview.AlignCenter)
+	form.SetBorder(true).SetTitle(" Flac To M4a FFMpeg ").SetTitleAlign(tview.AlignCenter)
 	if err := app.SetRoot(form, true).EnableMouse(true).Run(); err != nil {
 		panic(err)
 	}
