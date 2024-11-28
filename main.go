@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/rivo/tview"
 )
@@ -67,6 +68,15 @@ func converter(inputDir, outputDir, Quality string) {
 		}
 	}
 
+	// Registrar o tempo de início
+	startTime := time.Now()
+
+	// Contador de arquivos processados
+	totalFiles := len(fileQueue)
+
+	// Exibir o progresso no terminal
+	fmt.Printf("Iniciando conversão de %d arquivos FLAC...\n", totalFiles)
+
 	// Processar os arquivos
 	for _, inputFile := range fileQueue {
 		// Adicionar uma Goroutine para processar o arquivo
@@ -124,8 +134,14 @@ func converter(inputDir, outputDir, Quality string) {
 	// Esperar até que todas as Goroutines terminem
 	wg.Wait()
 
-	// Exibir a mensagem modal depois que todas as conversões forem feitas
-	modal("Conversão concluída para todos os arquivos FLAC!")
+	// Registrar o tempo de término
+	endTime := time.Now()
+
+	// Calcular o tempo total gasto
+	duration := endTime.Sub(startTime)
+
+	// Exibir a mensagem modal com o tempo de processamento
+	modal(fmt.Sprintf("Conversão concluída com sucesso!\nTempo total: %s", duration))
 }
 
 func modal(text string) {
