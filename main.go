@@ -22,8 +22,8 @@ func form() {
 	tamanhoCampos := 60
 
 	form = tview.NewForm().
-		AddInputField("Diretório de Entrada", "C:\\Users\\leand\\Downloads\\Telegram Desktop", tamanhoCampos, nil, nil).
-		AddInputField("Diretório de Saida", "C:\\Users\\leand\\Downloads\\Telegram Desktop", tamanhoCampos, nil, nil).
+		AddInputField("Diretório de Entrada", "C:\\Users\\leand\\Music", tamanhoCampos, nil, nil).
+		AddInputField("Diretório de Saida", "C:\\Users\\leand\\Music", tamanhoCampos, nil, nil).
 		AddInputField("Qualidade do áudio", "10", 20, nil, nil).
 		AddButton("Converter", func() {
 			app.Stop()
@@ -79,5 +79,20 @@ func converter(inputDir, outputDir, Quality string) {
 		}
 	}
 
-	fmt.Println("Conversão concluída para todos os arquivos FLAC!")
+	modal("Conversão concluída para todos os arquivos FLAC!")
+}
+
+func modal(text string) {
+	app := tview.NewApplication()
+	modal := tview.NewModal().
+		SetText(text).
+		AddButtons([]string{"Sair"}).
+		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			if buttonLabel == "Sair" {
+				app.Stop()
+			}
+		})
+	if err := app.SetRoot(modal, false).SetFocus(modal).EnableMouse(true).Run(); err != nil {
+		panic(err)
+	}
 }
