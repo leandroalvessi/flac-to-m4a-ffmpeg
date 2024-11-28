@@ -5,7 +5,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/rivo/tview"
 )
@@ -49,21 +51,48 @@ func converter(inputDir, outputDir, Quality string) {
 		return
 	}
 
+	var wg sync.WaitGroup
+
+	// Obter o número de núcleos disponíveis na CPU
+	numCPU := runtime.NumCPU()
+
+	// Criar um canal com capacidade igual ao número de núcleos da CPU
+	sem := make(chan struct{}, numCPU)
+
+	// Lista de arquivos a serem processados
+	var fileQueue []string
 	for _, file := range files {
 		if !file.IsDir() && strings.HasSuffix(strings.ToLower(file.Name()), ".flac") {
-			inputFile := filepath.Join(inputDir, file.Name())
-			outputFile := filepath.Join(outputDir, strings.TrimSuffix(file.Name(), ".flac")+".m4a")
+			fileQueue = append(fileQueue, filepath.Join(inputDir, file.Name()))
+		}
+	}
 
+	// Processar os arquivos
+	for _, inputFile := range fileQueue {
+		// Adicionar uma Goroutine para processar o arquivo
+		wg.Add(1)
+
+		// Adicionar um "token" ao semáforo
+		sem <- struct{}{}
+
+		// Iniciar a Goroutine para conversão
+		go func(inputFile string) {
+			defer wg.Done() // Decrementar o contador quando a Goroutine terminar
+
+			// Gerar nome do arquivo de saída
+			outputFile := filepath.Join(outputDir, strings.TrimSuffix(filepath.Base(inputFile), ".flac")+".m4a")
+			// Verificar se o arquivo de saída já existe e, caso exista, criar um nome único
 			counter := 1
 			for {
 				if _, err := os.Stat(outputFile); err == nil {
-					outputFile = filepath.Join(outputDir, fmt.Sprintf("%s (Copia %d).m4a", strings.TrimSuffix(file.Name(), ".flac"), counter))
+					outputFile = filepath.Join(outputDir, fmt.Sprintf("%s (Copia %d).m4a", strings.TrimSuffix(filepath.Base(inputFile), ".flac"), counter))
 					counter++
 				} else {
 					break
 				}
 			}
 
+			// Executar a conversão com ffmpeg
 			fmt.Printf("Convertendo: %s -> %s\n", inputFile, outputFile)
 
 			cmd := exec.Command(
@@ -81,13 +110,21 @@ func converter(inputDir, outputDir, Quality string) {
 			err := cmd.Run()
 			if err != nil {
 				fmt.Printf("Erro ao converter %s: %v\n", inputFile, err)
-				continue
+				<-sem // Liberar o "token" no semáforo em caso de erro
+				return
 			}
 
 			fmt.Printf("Arquivo convertido com sucesso: %s\n", outputFile)
-		}
+
+			// Liberar o "token" no semáforo quando a tarefa terminar
+			<-sem
+		}(inputFile)
 	}
 
+	// Esperar até que todas as Goroutines terminem
+	wg.Wait()
+
+	// Exibir a mensagem modal depois que todas as conversões forem feitas
 	modal("Conversão concluída para todos os arquivos FLAC!")
 }
 
