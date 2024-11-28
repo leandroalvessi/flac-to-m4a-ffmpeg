@@ -13,6 +13,8 @@ import (
 	"github.com/rivo/tview"
 )
 
+var RenomearPorNumero = true // Variável global que define se deve renomear os arquivos por número
+
 func main() {
 	form()
 }
@@ -28,6 +30,9 @@ func form() {
 		AddInputField("Diretório de Entrada", "C:\\Users\\leand\\Music", tamanhoCampos, nil, nil).
 		AddInputField("Diretório de Saida", "C:\\Users\\leand\\Music", tamanhoCampos, nil, nil).
 		AddInputField("Qualidade do áudio", "10", 20, nil, nil).
+		AddCheckbox("Renomear Por Numero", false, func(checked bool) {
+			RenomearPorNumero = checked // Atualiza a variável global com o estado da checkbox
+		}).
 		AddButton("Converter", func() {
 			app.Stop()
 			inputFile := form.GetFormItemByLabel("Diretório de Entrada").(*tview.InputField).GetText()
@@ -78,7 +83,7 @@ func converter(inputDir, outputDir, Quality string) {
 	fmt.Printf("Iniciando conversão de %d arquivos FLAC...\n", totalFiles)
 
 	// Processar os arquivos
-	for _, inputFile := range fileQueue {
+	for idx, inputFile := range fileQueue {
 		// Adicionar uma Goroutine para processar o arquivo
 		wg.Add(1)
 
@@ -86,11 +91,21 @@ func converter(inputDir, outputDir, Quality string) {
 		sem <- struct{}{}
 
 		// Iniciar a Goroutine para conversão
-		go func(inputFile string) {
+		go func(idx int, inputFile string) {
 			defer wg.Done() // Decrementar o contador quando a Goroutine terminar
 
 			// Gerar nome do arquivo de saída
-			outputFile := filepath.Join(outputDir, strings.TrimSuffix(filepath.Base(inputFile), ".flac")+".m4a")
+			var outputFile string
+
+			// Verificar se a variável RenomearPorNumero está ativada
+			if RenomearPorNumero {
+				// Formatar o número da música com dois dígitos
+				numeroMusica := fmt.Sprintf("%02d", idx+1)
+				outputFile = filepath.Join(outputDir, numeroMusica+" - "+strings.TrimSuffix(filepath.Base(inputFile), ".flac")+".m4a")
+			} else {
+				outputFile = filepath.Join(outputDir, strings.TrimSuffix(filepath.Base(inputFile), ".flac")+".m4a")
+			}
+
 			// Verificar se o arquivo de saída já existe e, caso exista, criar um nome único
 			counter := 1
 			for {
@@ -128,7 +143,7 @@ func converter(inputDir, outputDir, Quality string) {
 
 			// Liberar o "token" no semáforo quando a tarefa terminar
 			<-sem
-		}(inputFile)
+		}(idx, inputFile)
 	}
 
 	// Esperar até que todas as Goroutines terminem
