@@ -54,6 +54,16 @@ func converter(inputDir, outputDir, Quality string) {
 			inputFile := filepath.Join(inputDir, file.Name())
 			outputFile := filepath.Join(outputDir, strings.TrimSuffix(file.Name(), ".flac")+".m4a")
 
+			counter := 1
+			for {
+				if _, err := os.Stat(outputFile); err == nil {
+					outputFile = filepath.Join(outputDir, fmt.Sprintf("%s (Copia %d).m4a", strings.TrimSuffix(file.Name(), ".flac"), counter))
+					counter++
+				} else {
+					break
+				}
+			}
+
 			fmt.Printf("Convertendo: %s -> %s\n", inputFile, outputFile)
 
 			cmd := exec.Command(
@@ -68,7 +78,6 @@ func converter(inputDir, outputDir, Quality string) {
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 
-			// Executar o comando FFmpeg
 			err := cmd.Run()
 			if err != nil {
 				fmt.Printf("Erro ao converter %s: %v\n", inputFile, err)
