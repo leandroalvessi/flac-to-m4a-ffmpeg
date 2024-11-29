@@ -13,7 +13,7 @@ import (
 	"github.com/rivo/tview"
 )
 
-var RenomearPorNumero = true // Variável global que define se deve renomear os arquivos por número
+var RenomearPorNumero = false // Variável global que define se deve renomear os arquivos por número
 
 func main() {
 	form()
@@ -126,9 +126,10 @@ func converter(inputDir, outputDir, Quality string) {
 				"-vn",         // Ignorar vídeo
 				"-c:a", "aac", // Codec de áudio AAC
 				"-q:a", Quality, // Qualidade do áudio
-				"-map_metadata", "-1", // Remove metadados
+				"-map", "0", // Preserva todos os fluxos (áudio, metadados, etc.)
 				outputFile, // Arquivo de saída
 			)
+
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 
