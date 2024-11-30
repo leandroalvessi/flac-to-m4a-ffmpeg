@@ -123,10 +123,13 @@ func converter(inputDir, outputDir, Quality string) {
 			cmd := exec.Command(
 				"ffmpeg",
 				"-i", inputFile, // Arquivo de entrada
-				"-vn",         // Ignorar vídeo
 				"-c:a", "aac", // Codec de áudio AAC
 				"-q:a", Quality, // Qualidade do áudio
-				"-map", "0", // Preserva todos os fluxos (áudio, metadados, etc.)
+				"-map", "0", // Preserva todos os fluxos (áudio, capa, etc.)
+				"-map_metadata", "0", // Preserva todos os metadados
+				"-c:v", "mjpeg", // Especifica o formato da capa como JPEG (usado por padrão em MP3/MP4)
+				"-disposition:v", "attached_pic", // Define o fluxo de imagem como "capa do álbum"
+				"-avoid_negative_ts", "make_zero", // Corrige timestamps negativos
 				outputFile, // Arquivo de saída
 			)
 
